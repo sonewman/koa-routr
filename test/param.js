@@ -24,7 +24,7 @@ function makeRequest(address, options, cb) {
 desc('koaRoutr#param')
 .should('allow param matching', function (t) {
   const app = koa()
-  const router = koaRoutr()
+  const router = koaRoutr({ params: true })
 
   var count = 0
   router.param('no', function * (no, next) {
