@@ -29,6 +29,12 @@ proto.use = function (path, cb) {
   return this
 }
 
+proto.router = function (path) {
+  var router = koaRoutr()
+  this.middleware.push(mount(path, router))
+  return router
+}
+
 function koaRoutr() {
   var composed;
   const router = function * Router(upstream) {

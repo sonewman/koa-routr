@@ -40,7 +40,7 @@ router.del('/abc', function * () {
 
 ```
 
-And there is middleware (which you can use to structure further routers)
+And there is middleware (which you can `use` to structure further routers)
 ```javascript
 const app = koa()
 const router = koaRoutr()
@@ -60,6 +60,28 @@ nestedRouter.get('/123', function * () {
 })
 
 router.use('/abc', nestedRouter)
+```
+
+Now it is possible to create a new router at a mounted point, which reduces the
+above example to the following:
+```javascript
+const app = koa()
+const router = koaRoutr()
+
+app.use(router)
+app.listen(8000)
+
+router.use(function * (next) {
+  // get users details...
+  this.context = { user: 'sam' }
+  yield next
+})
+  
+router
+  .router('/abc')
+    .get('/123', function * () {
+      this.body = '123!!!'
+    })
 ```
 
 ## Licence
