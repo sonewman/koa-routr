@@ -59,3 +59,30 @@ desc('koaRoutr#router')
     }
   })
 })
+.should('allow param matching in nest router', function (t) {
+  const app = koa()
+  const router = koaRoutr()
+  app.use(router)
+  
+  router
+    .router('/abc', { params: true })
+      .param('no', function * (no, next) {
+        t.equals(no, '1234')
+        yield next
+      })
+      .get('/:no', function * (no) { this.body = no + '!!!' })
+
+  router.get('/abc/:no', function * (no) {
+    t.equals(count += 1, 2)
+    this.body = no + '!!!'
+  })
+
+  const s = app.listen(function () {
+    makeRequest(s.address(), { path: '/abc/1234' }, fn).end()
+    function fn(res, body) {
+      t.equals(res.statusCode, 200)
+      t.equals(body, '1234!!!')
+      s.close(function () { t.end() })
+    }
+  })
+})
