@@ -35,7 +35,7 @@ desc('koaRoutr#put')
   const app = koa()
   const router = koaRoutr()
   router.put('/abc', function * () {
-    return readData(this.req).then(function (body) {
+    yield readData(this.req).then(function (body) {
       t.equals(body, 'HEY!')
       this.body = 'OK!!!'
     }.bind(this))
@@ -56,7 +56,7 @@ desc('koaRoutr#put')
   const app = koa()
   const router = koaRoutr()
   router.put('/abc/:no', function * (no) {
-    return readData(this.req).then(function (body) {
+    yield readData(this.req).then(function (body) {
       t.equals(body, 'HEY!')
       t.equals(no, '123')
       this.body = 'OK!!!'

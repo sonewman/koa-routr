@@ -5,14 +5,15 @@ const koaMount = require('koa-mount')
 const compose = require('koa-compose')
 const methods = require('methods')
 const paramify = require('koa-params')
+const co = require('co')
 
 function call_(fn, ctx, args) {
   switch (args.length) {
-    case 0: return fn.call(ctx);
-    case 1: return fn.call(ctx, args[0]);
-    case 2: return fn.call(ctx, args[0], args[1]);
-    case 3: return fn.call(ctx, args[0], args[1], args[2]);
-    default: return fn.apply(ctx, args);
+    case 0: return fn.call(ctx)
+    case 1: return fn.call(ctx, args[0])
+    case 2: return fn.call(ctx, args[0], args[1])
+    case 3: return fn.call(ctx, args[0], args[1], args[2])
+    default: return fn.apply(ctx, args)
   }
 }
 
@@ -67,7 +68,7 @@ proto.router = function (path, opts) {
 function koaRoutr(options) {
   var composed;
   const router = function * Router(upstream) {
-    yield composed.call(this, upstream).next()
+    yield co.call(this, composed, upstream)
   }
 
   const p = Object.create(router.__proto__)
