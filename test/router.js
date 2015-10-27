@@ -63,19 +63,55 @@ desc('koaRoutr#router')
   const app = koa()
   const router = koaRoutr()
   app.use(router)
-  
+
   router
     .router('/abc', { params: true })
-      .param('no', function * (no, next) {
-        t.equals(no, '1234')
-        yield next
-      })
-      .get('/:no', function * (no) { this.body = no + '!!!' })
+    .param('no', function * (no, next) {
+      t.equals(no, '1234')
+      yield next
+    })
+    .get('/:no', function * (no) {
+      this.body = no + '!!!'
+    })
 
-  router.get('/abc/:no', function * (no) {
-    t.equals(count += 1, 2)
-    this.body = no + '!!!'
+  const s = app.listen(function () {
+    makeRequest(s.address(), { path: '/abc/1234' }, fn).end()
+    function fn(res, body) {
+      t.equals(res.statusCode, 200)
+      t.equals(body, '1234!!!')
+      s.close(function () { t.end() })
+    }
   })
+})
+.should('normalise urls to match url\'s with slashes at the end and beginning', function (t) {
+  const app = koa()
+  const router = koaRoutr()
+  app.use(router)
+
+  router
+    .router('/abc/')
+      .get('/123', function * () { this.body = 'OK!!!' })
+
+
+  const s = app.listen(function () {
+    makeRequest(s.address(), { path: '/abc/123' }, fn).end()
+    function fn(res, body) {
+      t.equals(res.statusCode, 200)
+      t.equals(body, 'OK!!!')
+      s.close(function () { t.end() })
+    }
+  })
+})
+.should('allow params to be at the start with no leading slash', function (t) {
+  const app = koa()
+  const router = koaRoutr()
+  app.use(router)
+
+  router
+    .router('/abc')
+    .get(':no', function * (no) {
+      this.body = no + '!!!'
+    })
 
   const s = app.listen(function () {
     makeRequest(s.address(), { path: '/abc/1234' }, fn).end()

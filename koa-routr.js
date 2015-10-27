@@ -24,10 +24,15 @@ function mount(a, b) {
   }
 }
 
+const leadingSlash = /^[\/]*/
+function normalisePath(p) {
+  return p.replace(leadingSlash, '/')
+}
+
 const proto = { constructor: null, middleware: null }
 function createMethod(method) {
   proto[method] = function (url, fn, opts) {
-    this.middleware.push(this._r[method](url, fn, opts))
+    this.middleware.push(this._r[method](normalisePath(url), fn, opts))
     return this
   }
 }
@@ -61,6 +66,7 @@ proto.use = function (path, cb) {
 
 proto.router = function (path, opts) {
   var router = koaRoutr(opts)
+  path = path.replace(/\/$/, '')
   this.middleware.push(mount(path, router))
   return router
 }

@@ -27,7 +27,7 @@ router.get('/abc', function * () {
 })
 
 router.put('/abc', function * () {
-  this.body = 'PUT'ED!!!'
+  this.body = 'PUT\'ED!!!'
 })
 
 router.post('/abc', function * () {
