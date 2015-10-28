@@ -1,7 +1,7 @@
 const desc = require('macchiato')
 const koa = require('koa')
 const koaRoutr = require('../')
-const request = require('http').request;
+const request = require('http').request
 
 function assign(a, b) {
   return Object.keys(b).reduce(function (n, k) { n[k] = b[k]; return n }, a)
@@ -24,18 +24,18 @@ function makeRequest(address, options, cb) {
 desc('koaRoutr#param')
 .should('allow param matching', function (t) {
   const app = koa()
-  const router = koaRoutr({ params: true })
+  const router = koaRoutr()
 
   var count = 0
-  router.param('no', function * (no, next) {
+  router.param('no', function * (next) {
     t.equals(count += 1, 1)
-    t.equals(no, '1234')
+    t.equals(this.params.no, '1234')
     yield next
     t.equals(count += 1, 3)
   })
-  router.get('/abc/:no', function * (no) {
+  router.get('/abc/:no', function * () {
     t.equals(count += 1, 2)
-    this.body = no + '!!!'
+    this.body = this.params.no + '!!!'
   })
 
   app.use(router)

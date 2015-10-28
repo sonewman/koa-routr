@@ -55,10 +55,10 @@ desc('koaRoutr#put')
 .should('create `put` handling params', function (t) {
   const app = koa()
   const router = koaRoutr()
-  router.put('/abc/:no', function * (no) {
+  router.put('/abc/:no', function * () {
     yield readData(this.req).then(function (body) {
       t.equals(body, 'HEY!')
-      t.equals(no, '123')
+      t.equals(this.params.no, '123')
       this.body = 'OK!!!'
     }.bind(this))
   })

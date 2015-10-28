@@ -43,8 +43,8 @@ desc('koaRoutr#get')
 .should('create `get` handling params', function (t) {
   const app = koa()
   const router = koaRoutr()
-  router.get('/abc/:no', function * (no) {
-    t.equals(no, '123')
+  router.get('/abc/:no', function * () {
+    t.equals(this.params.no, '123')
     this.body = 'OK!!!'
   })
 

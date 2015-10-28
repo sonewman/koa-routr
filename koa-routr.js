@@ -1,11 +1,10 @@
 module.exports = koaRoutr
 
-const route = require('koa-route')
 const koaMount = require('koa-mount')
 const compose = require('koa-compose')
 const methods = require('methods')
-const paramify = require('koa-params')
 const co = require('co')
+const pathToRegExp = require('path-to-regexp')
 
 function call_(fn, ctx, args) {
   switch (args.length) {
@@ -29,10 +28,78 @@ function normalisePath(p) {
   return p.replace(leadingSlash, '/')
 }
 
+function match(ctx, method) {
+  return ctx.method === method
+    || (ctx.method === 'HEAD' && method === 'GET')
+}
+
+function createParams(m, keys) {
+  const match = m.slice(1)
+  return keys.reduce(function (params, key, i) {
+    params[key] = decode(match[i])
+    return params
+  }, {})
+}
+
+function decode(v) {
+  return v && decodeURIComponent(v)
+}
+
+function createVerbHandle(method) {
+  return function (router, url, fn, opts) {
+    const ps = []
+    const re = pathToRegExp(url, ps, opts)
+    const keys = ps.map(function (m) {
+      return m.name
+    })
+
+    return function * (next) {
+      if (!match(this, method)) return yield * next
+
+      const m = re.exec(this.path)
+      if (!m) return yield * next
+
+      this.params
+      = this.request.params
+      = createParams(m, keys)
+
+      if (keys.length === 0) {
+        yield * fn.call(this, next)
+      } else {
+        yield * callParams.call(this, keys, router._params, fn, next)
+      }
+
+      return
+    }
+  }
+}
+
+function * callParams(keys, params, fn, next) {
+  var called = false
+
+  for (var i = 0; i < keys.length; i += 1) {
+    var key = keys[i]
+
+    if (typeof params[key] === 'function') {
+      called = true
+
+      yield co.call(this, params[key], function * () {
+        yield * fn.call(this, next)
+      })
+    }
+  }
+
+  if (!called) yield * fn.call(this, next)
+}
+
+const route = {}
+
 const proto = { constructor: null, middleware: null }
 function createMethod(method) {
+  route[method] = createVerbHandle(method.toUpperCase())
+
   proto[method] = function (url, fn, opts) {
-    this.middleware.push(this._r[method](normalisePath(url), fn, opts))
+    this.middleware.push(route[method](this, normalisePath(url), fn, opts))
     return this
   }
 }
@@ -41,11 +108,6 @@ methods.forEach(createMethod)
 
 proto.del = proto.delete
 proto.all = createMethod('all')
-
-proto.param = function (p, cb, opts) {
-  this._r.param(p, cb, opts)
-  return this
-}
 
 function addMiddleware(r, path, cb) {
   if ('object' === typeof cb) {
@@ -71,8 +133,8 @@ proto.router = function (path, opts) {
   return router
 }
 
-function koaRoutr(options) {
-  var composed;
+function koaRoutr() {
+  var composed
   const router = function * Router(upstream) {
     yield co.call(this, composed, upstream)
   }
@@ -81,10 +143,21 @@ function koaRoutr(options) {
   for (var k in proto) p[k] = proto[k]
   p.middleware = []
 
-  if (options && options.params) p._r = paramify(route)
-  else p._r = route
 
   composed = compose(p.middleware)
   router.__proto__ = p
+
+  const params = []
+  router._params = []
+
+  router.param = function (n, fn) {
+    if (!params[n]) {
+      params[n] = []
+      router._params[n] = compose(params[n])
+    }
+
+    params[n].push(fn)
+    return router
+  }
   return router
 }

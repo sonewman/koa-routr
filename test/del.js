@@ -43,8 +43,8 @@ desc('koaRoutr#del')
 .should('create `del` handling params', function (t) {
   const app = koa()
   const router = koaRoutr()
-  router.del('/abc/:no', function * (no) {
-    t.equals(no, '123')
+  router.del('/abc/:no', function * () {
+    t.equals(this.params.no, '123')
     this.body = 'OK!!!'
   })
 

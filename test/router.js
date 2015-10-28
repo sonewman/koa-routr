@@ -65,13 +65,13 @@ desc('koaRoutr#router')
   app.use(router)
 
   router
-    .router('/abc', { params: true })
-    .param('no', function * (no, next) {
-      t.equals(no, '1234')
+    .router('/abc')
+    .param('no', function * (next) {
+      t.equals(this.params.no, '1234')
       yield next
     })
-    .get('/:no', function * (no) {
-      this.body = no + '!!!'
+    .get('/:no', function * () {
+      this.body = this.params.no + '!!!'
     })
 
   const s = app.listen(function () {
@@ -109,8 +109,8 @@ desc('koaRoutr#router')
 
   router
     .router('/abc')
-    .get(':no', function * (no) {
-      this.body = no + '!!!'
+    .get(':no', function * () {
+      this.body = this.params.no + '!!!'
     })
 
   const s = app.listen(function () {
