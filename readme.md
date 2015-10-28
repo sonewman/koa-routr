@@ -40,6 +40,21 @@ router.del('/abc', function * () {
 
 ```
 
+### Version 5
+
+As of version 5 params are no longer passed into the route handle they are
+accessible on the `context` and `context.request`:
+
+```javascript
+router
+  .param('abc')
+  .get('/letters/:abc', function * () {
+    // abc is accessible as:
+    // this.params.abc
+    // or this.request.params.abc
+  })
+```
+
 And there is middleware (which you can `use` to structure further routers)
 ```javascript
 const app = koa()
