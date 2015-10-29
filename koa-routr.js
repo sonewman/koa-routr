@@ -29,7 +29,8 @@ function normalisePath(p) {
 }
 
 function match(ctx, method) {
-  return ctx.method === method
+  return !method
+    || ctx.method === method
     || (ctx.method === 'HEAD' && method === 'GET')
 }
 
@@ -94,12 +95,34 @@ function * callParams(keys, params, fn, next) {
 
 const route = {}
 
+function addRoute(router, method, url, fn, opts) {
+  router.middleware.push(
+    route[method](router, normalisePath(url), fn, opts)
+  )
+}
+
 const proto = { constructor: null, middleware: null }
 function createMethod(method) {
   route[method] = createVerbHandle(method.toUpperCase())
 
   proto[method] = function (url, fn, opts) {
-    this.middleware.push(route[method](this, normalisePath(url), fn, opts))
+    const l = arguments.length
+
+    if (l < 3 || (l === 3 && 'object' === typeof opts)) {
+      addRoute(this, method, url, fn, opts)
+    } else {
+      const handles = []
+
+      for (var i = 1; i < l; i += 1) {
+        var arg = arguments[i]
+
+        if ('function' === typeof arg)
+          handles.push(arg)
+      }
+
+      addRoute(this, method, url, compose(handles), opts)
+    }
+
     return this
   }
 }
@@ -121,8 +144,26 @@ function addMiddleware(r, path, cb) {
   }
 }
 
-proto.use = function (path, cb) {
-  addMiddleware(this, path, cb)
+proto.use = function (path) {
+  const j = 'string' === typeof path ? 1 : 0
+  const l = arguments.length
+
+  if (j === 0 && l === 1) {
+    this.middleware.push(arguments[j])
+  } else if (j === 1 && l === 2) {
+    addMiddleware(this, path, arguments[j])
+  } else {
+    var handles = new Array(l - 1)
+
+    for (var i = j; i < l; i += 1)
+      handles[i - j] = arguments[i]
+
+    if (j === 0)
+      this.middleware.push(compose(handles))
+    else
+      addMiddleware(this, path, compose(handles))
+  }
+
   return this
 }
 
@@ -141,11 +182,11 @@ function koaRoutr() {
 
   const p = Object.create(router.__proto__)
   for (var k in proto) p[k] = proto[k]
-  p.middleware = []
 
-
-  composed = compose(p.middleware)
   router.__proto__ = p
+
+  router.middleware = []
+  composed = compose(router.middleware)
 
   const params = []
   router._params = []
